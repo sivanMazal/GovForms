@@ -18,5 +18,7 @@ namespace GovForms.Engine.Models
         
         // הוספנו את זה כי המערכת צריכה לדעת מתי הוגשה הבקשה
         public DateTime SubmissionDate { get; set; } 
+        public ApplicationType Type { get; set; } // סוג הבקשה
+        public List<string> Documents { get; set; } = new List<string>(); // רשימת מסמכים
     }
 }

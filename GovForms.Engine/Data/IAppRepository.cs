@@ -8,5 +8,6 @@ namespace GovForms.Engine.Data
     {
         List<Application> GetApplicationsByStatus(int statusId);
         void UpdateStatus(int appId, int newStatus);
+        void LogHistory(ApplicationHistory history);
     }
 }

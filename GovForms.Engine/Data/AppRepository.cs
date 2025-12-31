@@ -74,5 +74,31 @@ public void UpdateStatus(int appId, int newStatus)
         historyCmd.ExecuteNonQuery();
     }
 }
+// מימוש הפונקציה לכתיבת היסטוריה ב-SQL האמיתי
+        public void LogHistory(ApplicationHistory history)
+        {
+            using (var conn = new SqlConnection(_connString))
+            {
+                conn.Open();
+
+                string sql = @"INSERT INTO ApplicationHistory 
+                               (ApplicationID, StatusID, ChangeDate, Remarks, UserID, ActionDescription) 
+                               VALUES 
+                               (@appId, @status, @date, @remarks, @userId, @action)";
+
+                using (var cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@appId", history.ApplicationId);
+                    // המרה ל-INT כדי שה-SQL יבין את ה-Enum
+                    cmd.Parameters.AddWithValue("@status", (int)history.Status); 
+                    cmd.Parameters.AddWithValue("@date", history.Date);
+                    cmd.Parameters.AddWithValue("@remarks", history.Remarks ?? (object)DBNull.Value); // טיפול ב-Null
+                    cmd.Parameters.AddWithValue("@userId", history.UserId);
+                    cmd.Parameters.AddWithValue("@action", history.Action);
+
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
     }
 }

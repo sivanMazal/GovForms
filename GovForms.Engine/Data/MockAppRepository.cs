@@ -8,38 +8,46 @@ namespace GovForms.Engine.Data
 {
     public class MockAppRepository : IAppRepository
     {
+        private static List<ApplicationHistory> _historyDb = new List<ApplicationHistory>();
         // רשימה זמנית בזיכרון המותאמת למודל שלך
-        private static List<Application> _fakeDb = new List<Application>
-        {
-            new Application 
-            { 
-                Id = 100, 
-                Title = "בקשה להיתר בנייה", 
-                Amount = 5000, 
-                UserId = 10,
-                Status = (ApplicationStatus)1, // המרה למצב "חדש"
-                SubmissionDate = DateTime.Now 
-            },
-            new Application 
-            { 
-                Id = 101, 
-                Title = "בקשה לרישיון עסק", 
-                Amount = 12000, 
-                UserId = 20,
-                Status = (ApplicationStatus)1, 
-                SubmissionDate = DateTime.Now 
-            },
-            new Application 
-            { 
-                Id = 102, 
-                Title = "בקשה להנחה בארנונה", 
-                Amount = 800, 
-                UserId = 10,
-                Status = (ApplicationStatus)1, 
-                SubmissionDate = DateTime.Now 
-            }
-        };
+private static List<Application> _fakeDb = new List<Application>
+{
+    // בקשה 100: סכום נמוך (5,000) - הפקיד אמור להצליח
+    new Application 
+    { 
+        Id = 100, 
+        Title = "בניית מרפסת", 
+        Amount = 5000, // <--- הוספנו סכום!
+        Type = ApplicationType.BuildingPermit,
+        Status = (ApplicationStatus)1, 
+        SubmissionDate = DateTime.Now,
+        Documents = new List<string> { "Map.pdf", "Engineer_Plan.pdf" } 
+    },
+    
+    // בקשה 101: סכום גבוה (12,000) - הפקיד אמור להיחסם! ⛔
+    new Application 
+    { 
+        Id = 101, 
+        Title = "פתיחת דוכן פלאפל", 
+        Amount = 12000, // <--- הוספנו סכום גבוה!
+        Type = ApplicationType.BusinessLicense,
+        Status = (ApplicationStatus)1, 
+        SubmissionDate = DateTime.Now,
+        Documents = new List<string> { "RentalContract.pdf" } 
+    },
 
+    // בקשה 102: סכום נמוך (800) - הפקיד אמור להצליח
+    new Application 
+    { 
+        Id = 102, 
+        Title = "הנחת סטודנט", 
+        Amount = 800, // <--- הוספנו סכום!
+        Type = ApplicationType.TaxDiscount,
+        Status = (ApplicationStatus)1, 
+        SubmissionDate = DateTime.Now,
+        Documents = new List<string> { "PaySlip_01.jpg" }
+    }
+};
         public List<Application> GetApplicationsByStatus(int statusId)
         {
             Console.WriteLine($"[MockDB] מביא נתונים מהזיכרון עבור סטטוס {statusId}...");
@@ -57,5 +65,17 @@ namespace GovForms.Engine.Data
                 Console.WriteLine($"[MockDB] עודכן סטטוס לבקשה {appId} לסטטוס {newStatus}");
             }
         }
+        public void LogHistory(ApplicationHistory history)
+{
+    // נותנים מזהה ייחודי לשורה ביומן
+    history.Id = _historyDb.Count + 1;
+    
+    // שומרים בזיכרון
+    _historyDb.Add(history);
+    
+    // מדפיסים למסך כדי שתראי שזה עובד
+    Console.WriteLine($"   [AUDIT LOG] Saved: App {history.ApplicationId} | Action: {history.Action} | {history.Remarks}");
+}
     }
+    
 }
