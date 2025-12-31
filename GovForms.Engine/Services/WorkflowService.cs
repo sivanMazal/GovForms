@@ -1,39 +1,44 @@
-﻿using GovForms.Engine.Data;
-using GovForms.Engine.Models;
+﻿using System;
 using System.Collections.Generic;
+using GovForms.Engine.Data;
+using GovForms.Engine.Models;
 using GovForms.Engine.Models.Enums;
 
 namespace GovForms.Engine.Services
 {
     public class WorkflowService
     {
-        // יצירת הקשר לדאטה בתוך הסרוויס - הגנה על הגישה למסד הנתונים
-        private readonly AppRepository _repo = new AppRepository();
+        private readonly IAppRepository _repository;
 
-        public void ProcessAllPendingApplications()
+        public WorkflowService(IAppRepository repository)
         {
-            // השכבה הזו שולטת בתהליך
-            List<Application> apps = _repo.GetInProcessApplications();
+            _repository = repository;
+        }
+
+        public void Run()
+        {
+            Console.WriteLine("Starting workflow process...");
+            
+            // תיקון: שימוש בסטטוסים האמיתיים שלך
+            // 1. נחפש בקשות בסטטוס "טרם הוגש" (1)
+            int statusToSearch = (int)ApplicationStatus.NotSubmitted; 
+            
+            var apps = _repository.GetApplicationsByStatus(statusToSearch);
+            
+            Console.WriteLine($"Found {apps.Count} applications with status '{ApplicationStatus.NotSubmitted}'.");
 
             foreach (var app in apps)
             {
-                // כאן נכניס בעתיד את הבדיקה האמיתית בטבלת Documents
-                bool hasDocs = true;
-
-                // קבלת החלטה לוגית
-                var nextStatus = CalculateNextStatus(app, hasDocs);
-
-                // עדכון הנתונים מתבצע רק דרך הלוגיקה של הסרוויס
-                _repo.UpdateApplicationStatus(app.Id, nextStatus, "עובד אוטומטית עיי השירות הממשלתי", 1);
+                Console.WriteLine($" -> Processing App #{app.Id}: {app.Title}");
+                
+                // 2. נעביר אותן לסטטוס "בטיפול" (3)
+                _repository.UpdateStatus(app.Id, (int)ApplicationStatus.InProcess);
             }
-        }
-
-        private ApplicationStatus CalculateNextStatus(Application app, bool hasDocs)
-        {
-            if (!hasDocs) return ApplicationStatus.ReturnedForDocs;
-            if (app.Amount > 10000) return ApplicationStatus.InProcess; // סכום גבוה נשאר לבדיקה אנושית
-
-            return ApplicationStatus.Handled;
+            
+            if (apps.Count == 0)
+            {
+                Console.WriteLine("No applications found.");
+            }
         }
     }
 }

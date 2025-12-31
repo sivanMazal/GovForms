@@ -1,36 +1,30 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\smsio\\source\\repos\\GovForms.Engine\\GovForms.Engine\\GovForms.Engine.csproj": {}
+    "C:\\Users\\Developer-01\\GovForms\\GovForms.Engine\\GovForms.Engine.csproj": {}
   },
   "projects": {
-    "C:\\Users\\smsio\\source\\repos\\GovForms.Engine\\GovForms.Engine\\GovForms.Engine.csproj": {
+    "C:\\Users\\Developer-01\\GovForms\\GovForms.Engine\\GovForms.Engine.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\smsio\\source\\repos\\GovForms.Engine\\GovForms.Engine\\GovForms.Engine.csproj",
+        "projectUniqueName": "C:\\Users\\Developer-01\\GovForms\\GovForms.Engine\\GovForms.Engine.csproj",
         "projectName": "GovForms.Engine",
-        "projectPath": "C:\\Users\\smsio\\source\\repos\\GovForms.Engine\\GovForms.Engine\\GovForms.Engine.csproj",
-        "packagesPath": "C:\\Users\\smsio\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\smsio\\source\\repos\\GovForms.Engine\\GovForms.Engine\\obj\\",
+        "projectPath": "C:\\Users\\Developer-01\\GovForms\\GovForms.Engine\\GovForms.Engine.csproj",
+        "packagesPath": "C:\\Users\\Developer-01\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Developer-01\\GovForms\\GovForms.Engine\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\smsio\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\Developer-01\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
-          "net6.0"
+          "net8.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "net6.0": {
-            "targetAlias": "net6.0",
+          "net8.0": {
+            "targetAlias": "net8.0",
             "projectReferences": {}
           }
         },
@@ -38,11 +32,16 @@
           "warnAsError": [
             "NU1605"
           ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
         }
       },
       "frameworks": {
-        "net6.0": {
-          "targetAlias": "net6.0",
+        "net8.0": {
+          "targetAlias": "net8.0",
           "dependencies": {
             "Microsoft.Data.SqlClient": {
               "target": "Package",
@@ -69,7 +68,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.102\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.416/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
