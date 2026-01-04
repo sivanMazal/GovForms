@@ -10,15 +10,16 @@ namespace GovForms.Engine.Validators
             {
                 case ApplicationType.BuildingPermit:
                     return new BuildingPermitValidator();
-                
+
                 case ApplicationType.BusinessLicense:
                     return new BusinessLicenseValidator();
-                
-                case ApplicationType.TaxDiscount:
-                    return new TaxDiscountValidator();
-                
+
+                // כאן הייתה הטעות: תיקנו את השם ל-TaxRefundValidator
+                case ApplicationType.TaxRefund:
+                    return new TaxRefundValidator(); 
+
                 default:
-                    return null; // אם אין מומחה, נחזיר כלום (והמנהל יטפל בזה)
+                    return null;
             }
         }
     }
