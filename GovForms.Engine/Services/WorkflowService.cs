@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
 using GovForms.Engine.Data;
 using GovForms.Engine.Models;
 using GovForms.Engine.Models.Enums;
+using GovForms.Engine.Validators; // <--- הוספנו את הגישה לתיקייה החדשה
 
 namespace GovForms.Engine.Services
 {
@@ -18,55 +18,64 @@ namespace GovForms.Engine.Services
 
         public void Run()
         {
-            Console.WriteLine("Starting AUDITED workflow process...");
+            Console.WriteLine("Starting STRATEGY workflow process...");
             
-            // הגדרת משתמש נוכחי (לצורך סימולציה)
-            // תוכלי לשנות ל-Manager כדי לראות איך החסימה משתחררת
+            // הגדרות משתמש (סימולציה)
             UserRole currentUserRole = UserRole.Clerk; 
-            int currentUserId = 555; // סתם מספר מזהה של הפקיד
+            int currentUserId = 555;
 
-            Console.WriteLine($"[Identity] User: {currentUserId} | Role: {currentUserRole}");
-
-            // שליפת בקשות חדשות
             var apps = _repository.GetApplicationsByStatus((int)ApplicationStatus.NotSubmitted);
 
             foreach (var app in apps)
             {
-                Console.WriteLine($" -> Checking App #{app.Id} ({app.Amount:C})...");
+                Console.WriteLine($" -> Checking App #{app.Id} ({app.Type})...");
 
-                // 1. בדיקת אבטחה (Security Check)
+                // --- שלב 1: בדיקת אבטחה (נשאר ללא שינוי) ---
                 if (app.Amount > 10000 && currentUserRole != UserRole.Manager && currentUserRole != UserRole.Admin)
                 {
-                    Console.WriteLine($"    [!] ACCESS DENIED. Amount too high.");
-                    
-                    // --- כתיבה ליומן: חסימת אבטחה ---
+                    Console.WriteLine($"    [!] ACCESS DENIED (Security Block).");
                     _repository.LogHistory(new ApplicationHistory
                     {
                         ApplicationId = app.Id,
                         Status = app.Status,
                         Action = "SecurityBlock",
-                        Remarks = $"Role {currentUserRole} denied for amount {app.Amount}",
+                        Remarks = "Amount too high for user role",
                         UserId = currentUserId
                     });
-                    
-                    continue; // מדלגים לבקשה הבאה
+                    continue; 
                 }
 
-                // 2. בדיקת לוגיקה עסקית (Validation)
-                bool isValid = ValidateApplicationRules(app);
+                // --- שלב 2: בדיקת תקינות באמצעות ה-FACTORY החדש! ---
+                
+                // המנהל מבקש מהמפעל: "תביא לי בבקשה מומחה שמבין בסוג הבקשה הזה"
+                IValidator validator = ValidatorFactory.GetValidator(app.Type);
+                
+                bool isValid = true;
 
+                if (validator != null)
+                {
+                    // המומחה מבצע את הבדיקה
+                    isValid = validator.Validate(app);
+                    Console.WriteLine($"    [?] Validating using expert: {validator.GetType().Name}");
+                }
+                else
+                {
+                    // אם אין מומחה ספציפי (null), נניח שהבקשה תקינה (חוקים כלליים)
+                    Console.WriteLine("    [?] No specific validator found. Using general rules.");
+                }
+
+                // --- שלב 3: קבלת החלטות (נשאר ללא שינוי) ---
                 if (isValid)
                 {
                     Console.WriteLine("    [V] Validation Passed.");
                     _repository.UpdateStatus(app.Id, (int)ApplicationStatus.InProcess);
                     
-                    // --- כתיבה ליומן: הצלחה ---
                     _repository.LogHistory(new ApplicationHistory
                     {
                         ApplicationId = app.Id,
                         Status = ApplicationStatus.InProcess,
                         Action = "StatusUpdate",
-                        Remarks = "Validation passed. Moved to InProcess.",
+                        Remarks = "Validation passed by expert logic",
                         UserId = currentUserId
                     });
                 }
@@ -75,38 +84,15 @@ namespace GovForms.Engine.Services
                     Console.WriteLine("    [X] Validation Failed.");
                     _repository.UpdateStatus(app.Id, (int)ApplicationStatus.ReturnedForDocs);
 
-                    // --- כתיבה ליומן: כישלון ---
                     _repository.LogHistory(new ApplicationHistory
                     {
                         ApplicationId = app.Id,
                         Status = ApplicationStatus.ReturnedForDocs,
                         Action = "ValidationFail",
-                        Remarks = "Missing documents for request type.",
+                        Remarks = "Expert validator rejected the documents",
                         UserId = currentUserId
                     });
                 }
-            }
-        }
-
-        // --- הלוגיקה החכמה (נשארת אותו דבר) ---
-        private bool ValidateApplicationRules(Application app)
-        {
-            if (app.Documents == null || app.Documents.Count == 0) return false;
-
-            switch (app.Type)
-            {
-                case ApplicationType.BuildingPermit:
-                    return app.Documents.Any(d => d.Contains("Map")) && 
-                           app.Documents.Any(d => d.Contains("Plan"));
-
-                case ApplicationType.BusinessLicense:
-                    return app.Documents.Any(d => d.Contains("Police"));
-
-                case ApplicationType.TaxDiscount:
-                    return app.Documents.Any(d => d.Contains("PaySlip"));
-
-                default:
-                    return true;
             }
         }
     }
