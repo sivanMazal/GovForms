@@ -2,9 +2,10 @@ namespace GovForms.Engine.Models.Enums
 {
     public enum ApplicationType
     {
-        General = 0,            // כללי
-        BuildingPermit = 1,     // היתר בנייה
-        BusinessLicense = 2,    // רישיון עסק
-        TaxDiscount = 3         // הנחה בארנונה
-    }
+        BuildingPermit = 1,
+        BusinessLicense = 2,
+        
+        // הנה החתיכה שהייתה חסרה לפאזל:
+TaxDiscount = 3 // הוספת הערך החסר כדי לפתור את השגיאה ב-Factory    }
+}
 }

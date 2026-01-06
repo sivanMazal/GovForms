@@ -26,8 +26,7 @@ namespace GovForms.API.Controllers
         [HttpPost("run-process")]
         public async Task<IActionResult> RunProcess()
         {
-            await _workflowService.Run();
-            return Ok("Process started! Check logs.");
+await _workflowService.RunAsync();            return Ok("Process started! Check logs.");
         }
 
         [HttpPost]
@@ -54,7 +53,7 @@ namespace GovForms.API.Controllers
                 UserId = 1,
                 SubmissionDate = DateTime.Now,
                 Status = ApplicationStatus.NotSubmitted,
-                Documents = new List<ApplicationDocument>()
+                AttachedDocuments = new List<ApplicationDocument>()
             };
 
             var createdApp = _repository.AddApplication(newApp);

@@ -33,4 +33,4 @@ else
 
 // למשל:
 var workflow = new WorkflowService(repo);
-workflow.Run();
+await workflow.RunAsync();

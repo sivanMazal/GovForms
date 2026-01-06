@@ -1,39 +1,46 @@
+using System;
 using System.Linq;
 using GovForms.Engine.Models;
 
 namespace GovForms.Engine.Validators
 {
-    // מומחה להיתר בנייה
+    // מומחה להיתר בנייה [cite: 2025-12-30]
     public class BuildingPermitValidator : IValidator
     {
         public bool Validate(Application app)
         {
-            if (app.Documents == null) return false;
-            // דורש גם מפה וגם תוכנית
-            return app.Documents.Any(d => d.Contains("Map")) && 
-                   app.Documents.Any(d => d.Contains("Plan"));
+            // בדיקה מקצועית: שימוש בשם השדה הנכון וחיפוש בתוך שם הקובץ [cite: 2025-12-30]
+            if (app.AttachedDocuments == null || !app.AttachedDocuments.Any()) return false;
+
+            // דורש גם מפה וגם תוכנית - שימוש ב-StringComparison למניעת טעויות [cite: 2025-12-30]
+            bool hasMap = app.AttachedDocuments.Any(d => d.FileName.Contains("Map", StringComparison.OrdinalIgnoreCase));
+            bool hasPlan = app.AttachedDocuments.Any(d => d.FileName.Contains("Plan", StringComparison.OrdinalIgnoreCase));
+
+            return hasMap && hasPlan;
         }
     }
 
-    // מומחה לרישיון עסק
+    // מומחה לרישיון עסק [cite: 2025-12-30]
     public class BusinessLicenseValidator : IValidator
     {
         public bool Validate(Application app)
         {
-            if (app.Documents == null) return false;
-            // דורש אישור משטרה
-            return app.Documents.Any(d => d.Contains("Police"));
+            if (app.AttachedDocuments == null) return false;
+
+            // דורש אישור משטרה [cite: 2025-12-30]
+            return app.AttachedDocuments.Any(d => d.FileName.Contains("Police", StringComparison.OrdinalIgnoreCase));
         }
     }
 
-    // מומחה להנחה בארנונה
+    // מומחה להנחה בארנונה [cite: 2025-12-30]
     public class TaxDiscountValidator : IValidator
     {
         public bool Validate(Application app)
         {
-            if (app.Documents == null) return false;
-            // דורש תלוש שכר
-            return app.Documents.Any(d => d.Contains("PaySlip"));
+            if (app.AttachedDocuments == null) return false;
+
+            // דורש תלוש שכר [cite: 2025-12-30]
+            return app.AttachedDocuments.Any(d => d.FileName.Contains("PaySlip", StringComparison.OrdinalIgnoreCase));
         }
     }
 }
