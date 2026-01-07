@@ -26,40 +26,40 @@ namespace GovForms.API.Controllers
         [HttpPost("run-process")]
         public async Task<IActionResult> RunProcess()
         {
-await _workflowService.RunAsync();            return Ok("Process started! Check logs.");
+            await _workflowService.RunAsync();
+            return Ok("Process started! Check logs.");
         }
 
-        [HttpPost]
-        public IActionResult CreateApplication([FromBody] ApplicationRequestDto request)
-        {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+     [HttpPost]
+public async Task<IActionResult> CreateApplication([FromBody] ApplicationRequestDto request)
+{
+    if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            // טריק להמרת String ל-Enum
-            // אם המשתמש שלח משהו לא הגיוני, נשים ברירת מחדל (Building)
-            ApplicationType typeEnum;
-            if (!Enum.TryParse(request.Type, out typeEnum))
-            {
-                typeEnum = ApplicationType.BuildingPermit; // ברירת מחדל
-            }
+    // 1. המרת ה-Type ל-Enum
+    if (!Enum.TryParse<ApplicationType>(request.Type, true, out var typeEnum))
+    {
+        return BadRequest($"The application type '{request.Type}' is invalid.");
+    }
 
-            var newApp = new Application
-            {
-                Title = request.Title,
-                Amount = request.Amount,
-                
-                // התיקון: שימוש במשתנה המומר
-                Type = typeEnum,
-                
-                UserId = 1,
-                SubmissionDate = DateTime.Now,
-                Status = ApplicationStatus.NotSubmitted,
-                AttachedDocuments = new List<ApplicationDocument>()
-            };
+    // 2. יצירת האובייקט הראשוני
+    var newApp = new Application 
+    {
+        Title = request.Title,
+        Type = typeEnum,
+        Amount = request.Amount,
+        UserEmail = request.UserEmail,
+        UserId = request.UserId,
+        StatusId = 1 // סטטוס התחלתי: InReview
+    };
 
-            var createdApp = _repository.AddApplication(newApp);
+    // 3. שמירה ראשונית ל-SQL - כאן אנחנו מקבלים את ה-Id האמיתי!
+    var createdApp = _repository.AddApplication(newApp);
 
-            return CreatedAtAction(nameof(GetStatus), new { id = createdApp.Id }, createdApp);
-        }
+    // 4. עכשיו, כשיש לנו Id (למשל 5), אפשר להריץ את המנוע ולתעד היסטוריה
+    await _workflowService.ProcessApplication(createdApp); 
+
+    return CreatedAtAction(nameof(GetStatus), new { id = createdApp.Id }, createdApp);
+}
 
         [HttpGet("{id}")]
         public IActionResult GetStatus(int id)

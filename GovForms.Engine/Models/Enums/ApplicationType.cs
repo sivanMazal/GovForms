@@ -6,6 +6,8 @@ namespace GovForms.Engine.Models.Enums
         BusinessLicense = 2,
         
         // הנה החתיכה שהייתה חסרה לפאזל:
-TaxDiscount = 3 // הוספת הערך החסר כדי לפתור את השגיאה ב-Factory    }
+TaxDiscount = 3 ,
+MaternityGrant=4
+// הוספת הערך החסר כדי לפתור את השגיאה ב-Factory    }
 }
 }

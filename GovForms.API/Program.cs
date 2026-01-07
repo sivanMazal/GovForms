@@ -11,22 +11,24 @@ builder.Services.AddScoped<ICitizenService, MinistryOfInteriorSimulator>();
 // --- המתג החכם שלנו ---
 // true  = בבית (משתמשים ב-SQL)
 // false = בעבודה (משתמשים ב-Mock)
-bool useSql = false; 
+bool useSql = true; 
 
 if (useSql)
 {
-    // המצב האמיתי (לבית)
-    // שימי לב: זה יקרוס אם אין לך SQL מותקן, לכן זה בתוך ה-IF
-    builder.Services.AddScoped<IAppRepository, AppRepository>();
+    // 1. שליפת כתובת ה-SQL מההגדרות (מתוך ה-JSON)
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+    // 2. רישום ה-Repository בעזרת פונקציית ייצור (Factory)
+    // אנחנו אומרים ל-DI: "אל תנסה לנחש, הנה הסטרינג שצריך להעביר ל-AppRepository"
+    builder.Services.AddScoped<IAppRepository>(sp => new AppRepository(connectionString!));
+    
     Console.WriteLine("--> Using SQL Database");
 }
 else
 {
-    // מצב פיתוח/עבודה (ללא דאטה בייס)
     builder.Services.AddSingleton<IAppRepository, MockAppRepository>();
     Console.WriteLine("--> Using Mock (Memory) Database");
 }
-
 builder.Services.AddScoped<WorkflowService>();
 
 var app = builder.Build();
