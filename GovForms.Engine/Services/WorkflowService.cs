@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using GovForms.Engine.Models;
 using GovForms.Engine.Models.Enums;
 using GovForms.Engine.Data;
-
+using Microsoft.EntityFrameworkCore;
 namespace GovForms.Engine.Services
 {
     public class WorkflowService
@@ -29,7 +29,7 @@ namespace GovForms.Engine.Services
                 {
                     ApplicationId = app.Id,
                     Action = "System Validation",
-                    Status = "PendingManualReview",
+                    Status = ApplicationStatus.PendingManualReview,
                     Remarks = $"Amount {app.Amount} exceeds 10,000. Required manual approval.",
                     UserId = app.UserId,
                     Timestamp = DateTime.Now

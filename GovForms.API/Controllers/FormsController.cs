@@ -1,12 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using GovForms.Engine.Services;
 using GovForms.API.DTOs;
 using GovForms.Engine.Data;
 using GovForms.Engine.Models;
 using GovForms.Engine.Models.Enums;
+using GovForms.Engine.Interfaces;
 
 namespace GovForms.API.Controllers
 {
@@ -16,57 +14,87 @@ namespace GovForms.API.Controllers
     {
         private readonly WorkflowService _workflowService;
         private readonly IAppRepository _repository;
+        private readonly IPermissionService _permissionService;
+        private readonly GovFormsDbContext _context; // הוספנו את השדה החסר
 
-        public FormsController(WorkflowService workflowService, IAppRepository repository)
+        // בנאי אחד מאוחד - הפתרון לשגיאה CS1520 [cite: 2026-01-08]
+        public FormsController(
+            WorkflowService workflowService, 
+            IAppRepository repository, 
+            IPermissionService permissionService,
+            GovFormsDbContext context)
         {
             _workflowService = workflowService;
             _repository = repository;
+            _permissionService = permissionService;
+            _context = context;
         }
 
-        [HttpPost("run-process")]
-        public async Task<IActionResult> RunProcess()
+        [HttpPost("submit")]
+        public async Task<IActionResult> SubmitApplication([FromBody] Application application)
         {
-            await _workflowService.RunAsync();
-            return Ok("Process started! Check logs.");
+            if (application == null) return BadRequest("נתוני הבקשה חסרים.");
+
+            // בדיקת מסמכים אוטומטית (דרישה מס' 2) [cite: 2025-12-30]
+            if (application.AttachedDocuments == null || !application.AttachedDocuments.Any())
+            {
+                application.Status = ApplicationStatus.MissingDocuments;
+            }
+            else
+            {
+                application.Status = ApplicationStatus.WaitingForTreatment;
+            }
+
+            application.SubmissionDate = DateTime.Now;
+
+            _context.Applications.Add(application);
+            await _context.SaveChangesAsync();
+
+            // תיעוד היסטורי - התאמה למודל המקצועי [cite: 2026-01-08]
+            var historyEntry = new ApplicationHistory
+            {
+                ApplicationId = application.Id,
+                UserId = application.UserId,
+                Status = application.Status,
+                Action = "Submission", // במקום ActionDescription
+                Timestamp = DateTime.Now, // במקום ActionDate
+                Remarks = application.Status == ApplicationStatus.MissingDocuments 
+                          ? "המערכת זיהתה חוסר במסמכים" 
+                          : "הבקשה הוגשה בהצלחה"
+            };
+
+            _context.ApplicationHistory.Add(historyEntry);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { ApplicationId = application.Id, Status = application.Status.ToString() });
         }
 
-     [HttpPost]
-public async Task<IActionResult> CreateApplication([FromBody] ApplicationRequestDto request)
-{
-    if (!ModelState.IsValid) return BadRequest(ModelState);
-
-    // 1. המרת ה-Type ל-Enum
-    if (!Enum.TryParse<ApplicationType>(request.Type, true, out var typeEnum))
-    {
-        return BadRequest($"The application type '{request.Type}' is invalid.");
-    }
-
-    // 2. יצירת האובייקט הראשוני
-    var newApp = new Application 
-    {
-        Title = request.Title,
-        Type = typeEnum,
-        Amount = request.Amount,
-        UserEmail = request.UserEmail,
-        UserId = request.UserId,
-        StatusId = 1 // סטטוס התחלתי: InReview
-    };
-
-    // 3. שמירה ראשונית ל-SQL - כאן אנחנו מקבלים את ה-Id האמיתי!
-    var createdApp = _repository.AddApplication(newApp);
-
-    // 4. עכשיו, כשיש לנו Id (למשל 5), אפשר להריץ את המנוע ולתעד היסטוריה
-    await _workflowService.ProcessApplication(createdApp); 
-
-    return CreatedAtAction(nameof(GetStatus), new { id = createdApp.Id }, createdApp);
-}
-
-        [HttpGet("{id}")]
-        public IActionResult GetStatus(int id)
+        [HttpPatch("{id}/approve")]
+        public async Task<IActionResult> ApproveApplication(int id, [FromQuery] int currentUserId)
         {
-            var app = _repository.GetApplicationById(id);
-            if (app == null) return NotFound();
-            return Ok(app);
+            // בדיקת הרשאות (RBAC) [cite: 2025-12-30]
+            bool canApprove = await _permissionService.CanUserApprove(currentUserId);
+            if (!canApprove) return Forbid("אין לך הרשאות מתאימות.");
+
+            var application = await _context.Applications.FindAsync(id);
+            if (application == null) return NotFound("הבקשה לא נמצאה.");
+
+            application.Status = ApplicationStatus.Treated;
+
+            var history = new ApplicationHistory
+            {
+                ApplicationId = id,
+                UserId = currentUserId,
+                Status = ApplicationStatus.Treated,
+                Action = "Approval",
+                Timestamp = DateTime.Now,
+                Remarks = "הבקשה אושרה לאחר בדיקה תקינה"
+            };
+
+            _context.ApplicationHistory.Add(history);
+            await _context.SaveChangesAsync();
+
+            return Ok("הבקשה אושרה בהצלחה.");
         }
     }
 }

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GovForms.Engine")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ea21a96d0ed722aab60e69c1fe16e351d403f994")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f7b448628d5c8ccea211302e65c5aa356a5cf9e3")]
 [assembly: System.Reflection.AssemblyProductAttribute("GovForms.Engine")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GovForms.Engine")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

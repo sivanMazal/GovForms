@@ -1,38 +1,28 @@
 using GovForms.Engine.Data;
 using GovForms.Engine.Services;
-using GovForms.API.Integrations;
+using GovForms.Engine.Interfaces;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+// 1. הגדרת בסיס הנתונים - חיוני לפתרון השגיאה שקיבלת [cite: 2026-01-08]
+builder.Services.AddDbContext<GovFormsDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// 2. רישום שירותי התשתית של ה-API
+builder.Services.AddControllers(); // חובה כדי שה-API יזהה את ה-Controllers
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddAuthorization(); 
 
-builder.Services.AddScoped<ICitizenService, MinistryOfInteriorSimulator>();
-// --- המתג החכם שלנו ---
-// true  = בבית (משתמשים ב-SQL)
-// false = בעבודה (משתמשים ב-Mock)
-bool useSql = true; 
-
-if (useSql)
-{
-    // 1. שליפת כתובת ה-SQL מההגדרות (מתוך ה-JSON)
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-    // 2. רישום ה-Repository בעזרת פונקציית ייצור (Factory)
-    // אנחנו אומרים ל-DI: "אל תנסה לנחש, הנה הסטרינג שצריך להעביר ל-AppRepository"
-    builder.Services.AddScoped<IAppRepository>(sp => new AppRepository(connectionString!));
-    
-    Console.WriteLine("--> Using SQL Database");
-}
-else
-{
-    builder.Services.AddSingleton<IAppRepository, MockAppRepository>();
-    Console.WriteLine("--> Using Mock (Memory) Database");
-}
+// 3. רישום השירותים המקצועיים (Dependency Injection) [cite: 2025-12-30]
+builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddScoped<IAppRepository, AppRepository>();
 builder.Services.AddScoped<WorkflowService>();
 
 var app = builder.Build();
 
+// הגדרת ה-Pipeline (סדר הפעולות של השרת)
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -41,6 +31,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
-app.MapControllers();
+app.MapControllers(); // חובה כדי לחבר את הכתובות לפונקציות ב-Controller
 
 app.Run();

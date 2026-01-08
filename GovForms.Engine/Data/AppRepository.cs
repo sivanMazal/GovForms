@@ -1,81 +1,63 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using Microsoft.Data.SqlClient;
-using Dapper;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using GovForms.Engine.Models;
 using GovForms.Engine.Models.Enums;
+using GovForms.Engine.Data;
 
 namespace GovForms.Engine.Data
 {
     public class AppRepository : IAppRepository
     {
-        private readonly string _connectionString;
+        private readonly GovFormsDbContext _context;
 
-        public AppRepository(string connectionString)
+        public AppRepository(GovFormsDbContext context)
         {
-            _connectionString = connectionString;
+            _context = context;
+        }
+
+        public Application GetApplicationById(int id)
+        {
+            // שליפה מקצועית הכוללת גם את המסמכים המצורפים [cite: 2025-12-30]
+            return _context.Applications
+                .Include(a => a.AttachedDocuments)
+                .FirstOrDefault(a => a.Id == id)!;
         }
 
         public List<Application> GetApplicationsByStatus(int statusId)
         {
-            using (IDbConnection db = new SqlConnection(_connectionString))
-            {
-                // שימוש ב-Dapper לשליפה מהירה ומקצועית
-                return db.Query<Application>(
-                    "SELECT * FROM Applications WHERE StatusId = @StatusId", 
-                    new { StatusId = statusId }
-                ).AsList();
-            }
+            // שליפה מבוססת LINQ - הרבה יותר בטוח וקריא מ-SQL גולמי [cite: 2026-01-08]
+            return _context.Applications
+                .Where(a => a.StatusId == statusId)
+                .ToList();
         }
 
         public void UpdateStatus(int appId, int newStatusId)
         {
-            using (IDbConnection db = new SqlConnection(_connectionString))
+            var app = _context.Applications.Find(appId);
+            if (app != null)
             {
-                db.Execute(
-                    "UPDATE Applications SET StatusId = @StatusId WHERE Id = @Id", 
-                    new { StatusId = newStatusId, Id = appId }
-                );
+                app.StatusId = newStatusId;
+                _context.SaveChanges(); // עדכון אוטומטי ב-SQL [cite: 2025-12-30]
             }
         }
 
         public void LogHistory(ApplicationHistory history)
         {
-            using (IDbConnection db = new SqlConnection(_connectionString))
-            {
-                string sql = @"INSERT INTO ApplicationHistory (ApplicationId, Action, Status, Remarks, UserId, Timestamp) 
-                               VALUES (@ApplicationId, @Action, @Status, @Remarks, @UserId, @Timestamp)";
-                db.Execute(sql, history);
-            }
+            // תיעוד במערכת ה-Audit (דרישה מס' 4) [cite: 2025-12-30]
+            _context.ApplicationHistory.Add(history);
+            _context.SaveChanges();
         }
 
-        // מימושים הנדרשים על ידי ה-Interface (נשלים בהמשך הפרויקט)
-public Application AddApplication(Application app)
-{
-    using (IDbConnection db = new SqlConnection(_connectionString))
-    {
-        app.SubmissionDate = DateTime.Now;
-        // הוספנו את עמודת Status (הטקסטואלית) לשאילתה
-        string sql = @"
-            INSERT INTO Applications (Title, Type, Amount, UserEmail, UserId, StatusId, Status, SubmissionDate) 
-            VALUES (@Title, @Type, @Amount, @UserEmail, @UserId, @StatusId, @Status, GETDATE());
-            SELECT CAST(SCOPE_IDENTITY() as int);";
-
-        // כאן אנחנו משתמשים ב-app.StatusId.ToString() כדי לשלוח את שם הסטטוס (למשל "InProcess")
-        int newId = db.QuerySingle<int>(sql, new { 
-            app.Title, 
-            app.Type,
-            app.Amount, 
-            app.UserEmail, 
-            app.UserId,
-            app.StatusId,
-            Status = app.StatusId.ToString() // המרת ה-Enum למחרוזת עבור ה-SQL
-        });
-
-        app.Id = newId;
-        return app;
-    }
-}       public Application GetApplicationById(int id) => throw new NotImplementedException();
+        public Application AddApplication(Application app)
+        {
+            // הגדרת תאריך הגשה וסטטוס ראשוני [cite: 2025-12-30]
+            app.SubmissionDate = DateTime.Now;
+            
+            _context.Applications.Add(app);
+            _context.SaveChanges(); // כאן ה-ID נוצר אוטומטית על ידי ה-SQL [cite: 2026-01-08]
+            
+            return app;
+        }
     }
 }

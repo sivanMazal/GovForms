@@ -2,6 +2,7 @@
 using GovForms.Engine.Data; // <--- חובה! כדי שיכיר את התיקייה Data
 using GovForms.Engine.Models;
 using GovForms.Engine.Services; // <--- השורה הזו קריטית!
+using Microsoft.EntityFrameworkCore; // השורה שחסרה כדי לזהות את DbContextOptionsBuilder
 // --- תחילת התוכנית ---
 
 Console.WriteLine("===============================================");
@@ -20,9 +21,17 @@ if (useMockData)
 }
 else
 {
-    // הגדרות למחשב בבית
+    // 1. הגדרת מחרוזת החיבור (Connection String)
     string connectionString = "Server=MY-LAPTOP;Database=GovFormsDB;Trusted_Connection=True;TrustServerCertificate=True;";
-    repo = new AppRepository(connectionString); 
+    Console.WriteLine("[System] Running in SQL mode");
+
+    // 2. יצירת ה-Options עבור ה-DbContext (ללא שימוש ב-Dependency Injection) [cite: 2026-01-08]
+    var optionsBuilder = new DbContextOptionsBuilder<GovFormsDbContext>();
+    optionsBuilder.UseSqlServer(connectionString);
+
+    // 3. יצירת ה-Context והזרקתו ל-Repository
+    var dbContext = new GovFormsDbContext(optionsBuilder.Options);
+    repo = new AppRepository(dbContext); 
 }
 
 // >>>>>>>> סוף הקוד החדש <<<<<<<<

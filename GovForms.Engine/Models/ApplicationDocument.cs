@@ -1,10 +1,14 @@
+using GovForms.Engine.Models.Enums;
 namespace GovForms.Engine.Models
 {
     public class ApplicationDocument
     {
-        public int Id { get; set; } // מזהה המסמך [cite: 2025-12-30]
-        public string FileName { get; set; } // שם הקובץ [cite: 2025-12-30]
-        public string FileType { get; set; } // סוג הקובץ [cite: 2025-12-30]
-        public byte[] Content { get; set; } // התוכן של הקובץ [cite: 2025-12-30]
+        public int Id { get; set; }
+        public int ApplicationId { get; set; }
+        public string FileName { get; set; }= null!;
+        public string FilePath { get; set; }= null!;
+        
+        // התאמה לצילום המסך שלך: UploadedAt
+        public DateTime UploadedAt { get; set; } = DateTime.Now; 
     }
 }
