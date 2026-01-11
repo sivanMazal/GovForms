@@ -23,25 +23,22 @@ namespace GovForms.Engine.Data
                 .Include(a => a.AttachedDocuments)
                 .FirstOrDefault(a => a.Id == id)!;
         }
+public List<Application> GetApplicationsByStatus(int statusId)
+{
+    return _context.Applications
+        .Where(a => a.StatusID == statusId) // תיקון: StatusID [cite: 2026-01-08]
+        .ToList();
+}
 
-        public List<Application> GetApplicationsByStatus(int statusId)
-        {
-            // שליפה מבוססת LINQ - הרבה יותר בטוח וקריא מ-SQL גולמי [cite: 2026-01-08]
-            return _context.Applications
-                .Where(a => a.StatusId == statusId)
-                .ToList();
-        }
-
-        public void UpdateStatus(int appId, int newStatusId)
-        {
-            var app = _context.Applications.Find(appId);
-            if (app != null)
-            {
-                app.StatusId = newStatusId;
-                _context.SaveChanges(); // עדכון אוטומטי ב-SQL [cite: 2025-12-30]
-            }
-        }
-
+public void UpdateStatus(int appId, int newStatusId)
+{
+    var app = _context.Applications.Find(appId);
+    if (app != null)
+    {
+        app.StatusID = newStatusId; // תיקון: StatusID [cite: 2026-01-08]
+        _context.SaveChanges();
+    }
+}
         public void LogHistory(ApplicationHistory history)
         {
             // תיעוד במערכת ה-Audit (דרישה מס' 4) [cite: 2025-12-30]

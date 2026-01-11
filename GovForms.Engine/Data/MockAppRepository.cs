@@ -8,7 +8,6 @@ namespace GovForms.Engine.Data
 {
     public class MockAppRepository : IAppRepository
     {
-        // פותר את שגיאות CS0103 - הגדרת הרשימות הפנימיות
         private readonly List<Application> _applications;
         private readonly List<ApplicationHistory> _historyLog;
 
@@ -20,7 +19,8 @@ namespace GovForms.Engine.Data
                 new Application { 
                     Id = 1, 
                     Title = "היתר בנייה - תל אביב", 
-                    Status = ApplicationStatus.NotSubmitted, // Enum תקין
+                    // המרה ל-int עבור השדה החדש StatusID [cite: 2026-01-08]
+                    StatusID = (int)ApplicationStatus.NotSubmitted, 
                     Type = ApplicationType.BuildingPermit, 
                     Amount = 15000, 
                     UserId = 555 
@@ -28,7 +28,7 @@ namespace GovForms.Engine.Data
                 new Application { 
                     Id = 2, 
                     Title = "בקשת הנחה בארנונה", 
-                    Status = ApplicationStatus.NotSubmitted, 
+                    StatusID = (int)ApplicationStatus.NotSubmitted, 
                     Type = ApplicationType.TaxDiscount, 
                     Amount = 2000, 
                     UserId = 555 
@@ -36,28 +36,27 @@ namespace GovForms.Engine.Data
             };
         }
 
-       public List<Application> GetApplicationsByStatus(int statusId)
-{
-    // המרה מפורשת (Casting) ל-int פותרת את שגיאת CS0030
-    return _applications.Where(a => (int)a.Status == statusId).ToList();
-}
+        public List<Application> GetApplicationsByStatus(int statusId)
+        {
+            // השוואה ישירה בין מספרים [cite: 2026-01-08]
+            return _applications.Where(a => a.StatusID == statusId).ToList();
+        }
 
         public void UpdateStatus(int appId, int newStatusId)
         {
             var app = _applications.FirstOrDefault(a => a.Id == appId);
             if (app != null)
             {
-                // המרה מ-int בחזרה ל-Enum
-                app.Status = (ApplicationStatus)newStatusId;
+                app.StatusID = newStatusId; // עדכון השדה החדש [cite: 2026-01-08]
             }
         }
 
-       public void LogHistory(ApplicationHistory history)
-{
-    _historyLog.Add(history);
-    // המרה ל-string לצורך הדפסה או שמירה בטבלת טקסט
-    Console.WriteLine($"[Audit] App #{history.ApplicationId} status: {history.Status}"); 
-}
+        public void LogHistory(ApplicationHistory history)
+        {
+            _historyLog.Add(history);
+            // שימוש ב-(ApplicationStatus) כדי להדפיס את השם הטקסטואלי של הסטטוס [cite: 2026-01-08]
+            Console.WriteLine($"[Audit] App #{history.ApplicationId} status: {(ApplicationStatus)history.Status}"); 
+        }
 
         public Application GetApplicationById(int id) => _applications.FirstOrDefault(a => a.Id == id);
         public Application AddApplication(Application app) { _applications.Add(app); return app; }

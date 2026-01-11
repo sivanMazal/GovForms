@@ -30,71 +30,61 @@ namespace GovForms.API.Controllers
             _context = context;
         }
 
-        [HttpPost("submit")]
-        public async Task<IActionResult> SubmitApplication([FromBody] Application application)
-        {
-            if (application == null) return BadRequest("נתוני הבקשה חסרים.");
+[HttpPatch("{id}/approve")]
+public async Task<IActionResult> Approve(int id) // עכשיו רק ה-ID הוא שדה חובה! [cite: 2026-01-11]
+{
+    // במערכת אמיתית, אנחנו מושכים את ה-ID מה-Claims (הזהות המחוברת) [cite: 2025-12-30]
+    // כרגע, לצורך הבדיקה, נגדיר אותו כמשתנה פנימי או נמשוך מה-Header
+    int currentUserId = 1007; // המזהה של Israel Israeli מה-SQL שלך [cite: 2026-01-11]
 
-            // בדיקת מסמכים אוטומטית (דרישה מס' 2) [cite: 2025-12-30]
-            if (application.AttachedDocuments == null || !application.AttachedDocuments.Any())
-            {
-                application.Status = ApplicationStatus.MissingDocuments;
-            }
-            else
-            {
-                application.Status = ApplicationStatus.WaitingForTreatment;
-            }
+    // בדיקת הרשאות (Reviewer = 1005) [cite: 2026-01-11]
+    var hasPermission = await _permissionService.CheckRole(currentUserId, 1005); 
+    
+    if (!hasPermission)
+    {
+        return StatusCode(403, new { message = "גישה נדחתה: חסרות הרשאות בודק ממשלתי." });
+    }
 
-            application.SubmissionDate = DateTime.Now;
+    await _workflowService.ApproveAsync(id);
+    return Ok(new { message = "הטופס אושר בהצלחה", ApplicationId = id });
+}
 
-            _context.Applications.Add(application);
-            await _context.SaveChangesAsync();
+[HttpPost("submit")]
+public async Task<IActionResult> SubmitApplication([FromBody] Application application)
+{
+    if (application == null) return BadRequest("נתוני הבקשה חסרים.");
 
-            // תיעוד היסטורי - התאמה למודל המקצועי [cite: 2026-01-08]
-            var historyEntry = new ApplicationHistory
-            {
-                ApplicationId = application.Id,
-                UserId = application.UserId,
-                Status = application.Status,
-                Action = "Submission", // במקום ActionDescription
-                Timestamp = DateTime.Now, // במקום ActionDate
-                Remarks = application.Status == ApplicationStatus.MissingDocuments 
-                          ? "המערכת זיהתה חוסר במסמכים" 
-                          : "הבקשה הוגשה בהצלחה"
-            };
+    // בדיקת מסמכים אוטומטית (דרישה מס' 2) [cite: 2025-12-30]
+    if (application.AttachedDocuments == null || !application.AttachedDocuments.Any())
+    {
+        application.StatusID = (int)ApplicationStatus.MissingDocuments; // שימוש ב-StatusID [cite: 2026-01-08]
+    }
+    else
+    {
+        application.StatusID = (int)ApplicationStatus.WaitingForTreatment;
+    }
 
-            _context.ApplicationHistory.Add(historyEntry);
-            await _context.SaveChangesAsync();
+    application.SubmissionDate = DateTime.Now;
 
-            return Ok(new { ApplicationId = application.Id, Status = application.Status.ToString() });
-        }
+    _context.Applications.Add(application);
+    await _context.SaveChangesAsync();
 
-        [HttpPatch("{id}/approve")]
-        public async Task<IActionResult> ApproveApplication(int id, [FromQuery] int currentUserId)
-        {
-            // בדיקת הרשאות (RBAC) [cite: 2025-12-30]
-            bool canApprove = await _permissionService.CanUserApprove(currentUserId);
-            if (!canApprove) return Forbid("אין לך הרשאות מתאימות.");
+    // תיעוד היסטורי (דרישה מס' 4 - Audit System) [cite: 2025-12-30]
+    var historyEntry = new ApplicationHistory
+    {
+        ApplicationId = application.Id,
+        UserId = application.UserId,
+Status = (ApplicationStatus)application.StatusID,        Action = "Submission",
+        Timestamp = DateTime.Now,
+        Remarks = application.StatusID == (int)ApplicationStatus.MissingDocuments 
+                  ? "המערכת זיהתה חוסר במסמכים" 
+                  : "הבקשה הוגשה בהצלחה"
+    };
 
-            var application = await _context.Applications.FindAsync(id);
-            if (application == null) return NotFound("הבקשה לא נמצאה.");
+    _context.ApplicationHistory.Add(historyEntry);
+    await _context.SaveChangesAsync();
 
-            application.Status = ApplicationStatus.Treated;
-
-            var history = new ApplicationHistory
-            {
-                ApplicationId = id,
-                UserId = currentUserId,
-                Status = ApplicationStatus.Treated,
-                Action = "Approval",
-                Timestamp = DateTime.Now,
-                Remarks = "הבקשה אושרה לאחר בדיקה תקינה"
-            };
-
-            _context.ApplicationHistory.Add(history);
-            await _context.SaveChangesAsync();
-
-            return Ok("הבקשה אושרה בהצלחה.");
-        }
+    return Ok(new { ApplicationId = application.Id, Status = application.StatusID });
+}
     }
 }
