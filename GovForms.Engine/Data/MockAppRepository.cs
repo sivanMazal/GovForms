@@ -16,49 +16,42 @@ namespace GovForms.Engine.Data
             _historyLog = new List<ApplicationHistory>();
             _applications = new List<Application>
             {
-                new Application { 
-                    Id = 1, 
-                    Title = "היתר בנייה - תל אביב", 
-                    // המרה ל-int עבור השדה החדש StatusID [cite: 2026-01-08]
-                    StatusID = (int)ApplicationStatus.NotSubmitted, 
-                    Type = ApplicationType.BuildingPermit, 
-                    Amount = 15000, 
-                    UserId = 555 
-                },
-                new Application { 
-                    Id = 2, 
-                    Title = "בקשת הנחה בארנונה", 
-                    StatusID = (int)ApplicationStatus.NotSubmitted, 
-                    Type = ApplicationType.TaxDiscount, 
-                    Amount = 2000, 
-                    UserId = 555 
-                }
+                new Application { Id = 1, Title = "טופס בדיקה 1", StatusID = 1, Amount = 5000 },
+                new Application { Id = 2, Title = "טופס בדיקה 2", StatusID = 1, Amount = 12000 }
             };
         }
 
-        public List<Application> GetApplicationsByStatus(int statusId)
+        // התאמה לממשק אסינכרוני באמצעות Task.FromResult [cite: 2026-01-11]
+        public Task<List<Application>> GetApplicationsByStatus(int statusId)
         {
-            // השוואה ישירה בין מספרים [cite: 2026-01-08]
-            return _applications.Where(a => a.StatusID == statusId).ToList();
+            var list = _applications.Where(a => a.StatusID == statusId).ToList();
+            return Task.FromResult(list);
         }
 
-        public void UpdateStatus(int appId, int newStatusId)
+        public Task<Application?> GetApplicationById(int id)
+        {
+            var app = _applications.FirstOrDefault(a => a.Id == id);
+            return Task.FromResult<Application?>(app);
+        }
+
+        public Task UpdateStatus(int appId, int newStatusId)
         {
             var app = _applications.FirstOrDefault(a => a.Id == appId);
-            if (app != null)
-            {
-                app.StatusID = newStatusId; // עדכון השדה החדש [cite: 2026-01-08]
-            }
+            if (app != null) app.StatusID = newStatusId;
+            return Task.CompletedTask; // מחזיר Task ריק שבוצע [cite: 2026-01-08]
         }
 
-        public void LogHistory(ApplicationHistory history)
+        public Task LogHistory(ApplicationHistory history)
         {
             _historyLog.Add(history);
-            // שימוש ב-(ApplicationStatus) כדי להדפיס את השם הטקסטואלי של הסטטוס [cite: 2026-01-08]
-            Console.WriteLine($"[Audit] App #{history.ApplicationId} status: {(ApplicationStatus)history.Status}"); 
+            Console.WriteLine($"[MOCK Audit] App #{history.ApplicationId} logged.");
+            return Task.CompletedTask;
         }
 
-        public Application GetApplicationById(int id) => _applications.FirstOrDefault(a => a.Id == id);
-        public Application AddApplication(Application app) { _applications.Add(app); return app; }
+        public Application AddApplication(Application app) 
+        { 
+            _applications.Add(app); 
+            return app; 
+        }
     }
 }

@@ -5,32 +5,23 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. הגדרת בסיס הנתונים - חיוני לפתרון השגיאה שקיבלת [cite: 2026-01-08]
+// הגדרת SQL בבית
 builder.Services.AddDbContext<GovFormsDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 2. רישום שירותי התשתית של ה-API
-builder.Services.AddControllers(); // חובה כדי שה-API יזהה את ה-Controllers
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddAuthorization(); 
 
-// 3. רישום השירותים המקצועיים (Dependency Injection) [cite: 2025-12-30]
-builder.Services.AddScoped<IPermissionService, PermissionService>();
-builder.Services.AddScoped<IAppRepository, AppRepository>();
-builder.Services.AddScoped<WorkflowService>();
+// --- רישום ה-DI: כאן נפתרת שגיאה CS7036! --- [cite: 2026-01-08]
+builder.Services.AddScoped<IAppRepository, AppRepository>(); 
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<WorkflowService>(); // השרת יזריק הכל לבד!
 
 var app = builder.Build();
 
-// הגדרת ה-Pipeline (סדר הפעולות של השרת)
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseHttpsRedirection();
+app.UseSwagger();
+app.UseSwaggerUI();
 app.UseAuthorization();
-app.MapControllers(); // חובה כדי לחבר את הכתובות לפונקציות ב-Controller
-
+app.MapControllers();
 app.Run();

@@ -1,25 +1,29 @@
-using GovForms.Engine.Models.Enums;
+using System.Collections.Generic;
+using GovForms.Engine.Interfaces;
 
 namespace GovForms.Engine.Validators
 {
-    public static class ValidatorFactory
+    public class ValidatorFactory
     {
-        public static IValidator GetValidator(ApplicationType type)
+        // ההגדרה הפרטית שהייתה חסרה [cite: 2026-01-08]
+        private readonly Dictionary<string, IValidator> _validators;
+
+        public ValidatorFactory()
         {
-            switch (type)
+            // אתחול המילון בתוך הבנאי
+            _validators = new Dictionary<string, IValidator>();
+        }
+
+        public IValidator GetValidator(string type)
+        {
+            // בדיקה אם הולידטור קיים במילון
+            if (_validators != null && _validators.ContainsKey(type))
             {
-                case ApplicationType.BuildingPermit:
-                    return new BuildingPermitValidator();
-                
-                case ApplicationType.BusinessLicense:
-                    return new BusinessLicenseValidator();
-                
-                case ApplicationType.TaxDiscount:
-                    return new TaxDiscountValidator();
-                
-                default:
-                    return null; // אם אין מומחה, נחזיר כלום (והמנהל יטפל בזה)
+                return _validators[type];
             }
+            
+            // החזרת null בטוח למקרה שלא נמצא (מונע קריסה)
+            return null!; 
         }
     }
 }

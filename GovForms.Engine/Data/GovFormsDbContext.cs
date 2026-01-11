@@ -17,7 +17,7 @@ namespace GovForms.Engine.Data
         public DbSet<ApplicationDocument> ApplicationDocuments { get; set; }
         public DbSet<ApplicationHistory> ApplicationHistory { get; set; }
         public DbSet<Role> Roles { get; set; }
-
+public DbSet<Notification> Notifications { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // הגדרת מפתח ראשי לטבלת הסטטוס (לפי מה שראינו ב-SQL שלך) [cite: 2025-12-30]

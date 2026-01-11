@@ -1,16 +1,16 @@
 using System.Collections.Generic;
 using GovForms.Engine.Models;
-
+using System.Threading.Tasks; 
+// חובה עבור ה-Task! [cite: 2026-01-11]
 namespace GovForms.Engine.Data
 {
     public interface IAppRepository
     {
-        List<Application> GetApplicationsByStatus(int statusId);
-        void UpdateStatus(int appId, int newStatus);
-        void LogHistory(ApplicationHistory history);
-        
+      Task UpdateStatus(int applicationId, int statusId);
+    Task LogHistory(ApplicationHistory history);
+Task<List<Application>> GetApplicationsByStatus(int statusId); // החזרת Task של רשימה [cite: 2026-01-11]
+Task<Application?> GetApplicationById(int id);        
         // --- הוספנו את השורות החסרות האלו: ---
         Application AddApplication(Application app);
-        Application GetApplicationById(int id);
     }
 }
