@@ -12,11 +12,13 @@ namespace GovForms.Engine.Services
     {
         private readonly IAppRepository _repository;
         private readonly INotificationService _notification; // הוספה [cite: 2025-12-30]
+        private readonly IExternalIntegrationService _externalService;
 
-        public WorkflowService(IAppRepository repository, INotificationService notification)
+        public WorkflowService(IAppRepository repository, INotificationService notification,IExternalIntegrationService external)
         {
             _repository = repository;
             _notification = notification; // הזרקה [cite: 2025-12-30]
+            _externalService = external;
         }
 public async Task ApproveAsync(int applicationId)
 {
@@ -38,7 +40,13 @@ public async Task ApproveAsync(int applicationId)
 public async Task ProcessApplication(Application app)
 {
     Console.WriteLine($"--> Processing Application #{app.Id} for {app.UserEmail}");
-
+bool hasDebts = await _externalService.HasOutstandingDebtsAsync(app.UserEmail);
+if (hasDebts)
+    {
+        await _repository.UpdateStatus(app.Id, 5); // סטטוס 5 = נדחה (Rejected)
+        await _notification.SendStatusUpdate(app.Id, app.UserId, "בקשתך נדחתה עקב חובות במערכת הממשלתית.");
+        return;
+    }
     // שלב 1: החלטה על ניתוב לפי סכום (דרישה מס' 7) [cite: 2025-12-30]
     string historyRemarks;
     if (app.Amount > 10000)

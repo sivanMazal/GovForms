@@ -54,10 +54,10 @@ public async Task<IActionResult> SubmitApplication([FromBody] Application applic
 {
     if (application == null) return BadRequest("נתוני הבקשה חסרים.");
 
-    // בדיקת מסמכים אוטומטית (דרישה מס' 2) [cite: 2025-12-30]
+    // 1. בדיקת מסמכים אוטומטית (דרישה מס' 2) [cite: 2025-12-30]
     if (application.AttachedDocuments == null || !application.AttachedDocuments.Any())
     {
-        application.StatusID = (int)ApplicationStatus.MissingDocuments; // שימוש ב-StatusID [cite: 2026-01-08]
+        application.StatusID = (int)ApplicationStatus.MissingDocuments;
     }
     else
     {
@@ -66,25 +66,33 @@ public async Task<IActionResult> SubmitApplication([FromBody] Application applic
 
     application.SubmissionDate = DateTime.Now;
 
+    // 2. שמירה בבסיס הנתונים (SQL בבית)
     _context.Applications.Add(application);
     await _context.SaveChangesAsync();
 
-    // תיעוד היסטורי (דרישה מס' 4 - Audit System) [cite: 2025-12-30]
+    // 3. הרצת ה-Workflow - כאן קורה הקסם של דרישה 6! [cite: 2026-01-13]
+    // הפונקציה הזו תבדוק חובות ואם יש חוב - תעדכן את הסטטוס ל-5 (נדחה)
+    await _workflowService.ProcessApplication(application);
+
+    // 4. תיעוד היסטורי (דרישה מס' 4 - Audit System) [cite: 2025-12-30]
     var historyEntry = new ApplicationHistory
     {
         ApplicationId = application.Id,
         UserId = application.UserId,
-Status = (ApplicationStatus)application.StatusID,        Action = "Submission",
+        Status = (ApplicationStatus)application.StatusID,
+        Action = "Submission & Validation",
         Timestamp = DateTime.Now,
-        Remarks = application.StatusID == (int)ApplicationStatus.MissingDocuments 
-                  ? "המערכת זיהתה חוסר במסמכים" 
-                  : "הבקשה הוגשה בהצלחה"
+        Remarks = application.StatusID == 5 ? "הבקשה נדחתה אוטומטית עקב חובות" : "הבקשה עברה ולידציה ראשונית"
     };
 
     _context.ApplicationHistory.Add(historyEntry);
     await _context.SaveChangesAsync();
 
-    return Ok(new { ApplicationId = application.Id, Status = application.StatusID });
+    return Ok(new { 
+        ApplicationId = application.Id, 
+        FinalStatus = application.StatusID,
+        Message = "הטופס התקבל ועבר בדיקת אינטגרציה חיצונית." 
+    });
 }
     }
 }

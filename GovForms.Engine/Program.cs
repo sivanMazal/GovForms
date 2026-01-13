@@ -36,12 +36,18 @@ else
     repo = new AppRepository(dbContext); 
     notificationService = new NotificationService(dbContext); 
 }
+// 1. יצירת השירות החדש (הסימולטור של משרד הפנים)
+IExternalIntegrationService externalService = new PopulationRegistrySimulator();
 
+// 2. יצירת ה-WorkflowService עם שלושת הפרמטרים [cite: 2026-01-13]
+// שימי לב: הוספנו את externalService בסוף!
+var workflow = new WorkflowService(repo, notificationService, externalService);
+
+// 3. הפעלה (מכיוון שזה בבית, נבדוק טופס קיים מה-SQL)
+await workflow.ApproveAsync(11);
 // >>>>>>>>>> התיקון לשגיאה CS7036 נמצא כאן: <<<<<<<<<<
 // אנחנו מעבירים גם את ה-repo וגם את ה-notificationService [cite: 2026-01-08]
-var workflow = new WorkflowService(repo, notificationService);
 
 // הפעלה אסינכרונית (חובה להוסיף await כי הפונקציה מחזירה Task) [cite: 2026-01-11]
-await workflow.ApproveAsync(11); 
 
 Console.WriteLine("Process Completed Successfully.");
