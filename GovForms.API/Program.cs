@@ -21,7 +21,7 @@ builder.Services.AddScoped<WorkflowService>(); // השרת יזריק הכל ל�
 builder.Services.AddScoped<IExternalIntegrationService, PopulationRegistrySimulator>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 var app = builder.Build();
-
+app.UseMiddleware<GovForms.API.Middleware.ExceptionMiddleware>();
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseAuthorization();

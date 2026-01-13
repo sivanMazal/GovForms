@@ -4,7 +4,8 @@ using System.Threading.Tasks; // חובה עבור Task [cite: 2026-01-11]
 using Microsoft.EntityFrameworkCore;
 using GovForms.Engine.Models;
 using GovForms.Engine.Data;
-
+using GovForms.Engine.Models.Enums;
+using GovForms.Engine.Interfaces; // <--- השורה הזו חובה! [cite: 2026-01-08]
 namespace GovForms.Engine.Data
 {
     public class AppRepository : IAppRepository
@@ -31,15 +32,31 @@ namespace GovForms.Engine.Data
                 .ToListAsync(); // שליפה אסינכרונית [cite: 2026-01-11]
         }
 
-        public async Task UpdateStatus(int appId, int newStatusId)
+     public async Task UpdateStatus(int appId, int newStatusId, string remarks = "עדכון סטטוס אוטומטי")
+{
+    var app = await _context.Applications.FindAsync(appId);
+    if (app != null)
+    {
+        // 1. עדכון הסטטוס בטבלה הראשית
+        app.StatusID = newStatusId;
+
+        // 2. יצירת שורת היסטוריה אוטומטית - דרישה מס' 4 [cite: 2025-12-30]
+        var history = new ApplicationHistory
         {
-            var app = await _context.Applications.FindAsync(appId);
-            if (app != null)
-            {
-                app.StatusID = newStatusId;
-                await _context.SaveChangesAsync(); // שמירה אסינכרונית [cite: 2026-01-11]
-            }
-        }
+            ApplicationId = appId,
+            Status = (ApplicationStatus)newStatusId,
+            Action = "Status Change",
+            Remarks = remarks,
+            Timestamp = DateTime.Now,
+            UserId = app.UserId // מקשרים למשתמש של הבקשה
+        };
+
+        _context.ApplicationHistory.Add(history);
+
+        // 3. שמירה של הכל בטרנזקציה אחת (הכל או כלום) [cite: 2026-01-11]
+        await _context.SaveChangesAsync();
+    }
+}
 
         public async Task LogHistory(ApplicationHistory history)
         {

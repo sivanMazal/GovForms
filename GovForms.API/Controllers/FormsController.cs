@@ -31,22 +31,15 @@ namespace GovForms.API.Controllers
         }
 
 [HttpPatch("{id}/approve")]
-public async Task<IActionResult> Approve(int id) // עכשיו רק ה-ID הוא שדה חובה! [cite: 2026-01-11]
+public async Task<IActionResult> Approve(int id)
 {
-    // במערכת אמיתית, אנחנו מושכים את ה-ID מה-Claims (הזהות המחוברת) [cite: 2025-12-30]
-    // כרגע, לצורך הבדיקה, נגדיר אותו כמשתנה פנימי או נמשוך מה-Header
-    int currentUserId = 1007; // המזהה של Israel Israeli מה-SQL שלך [cite: 2026-01-11]
-
-    // בדיקת הרשאות (Reviewer = 1005) [cite: 2026-01-11]
-    var hasPermission = await _permissionService.CheckRole(currentUserId, 1005); 
+    // שליפת ה-RoleID של המשתמש מה-DB (נניח משתמש 1007 הוא Reviewer)
+    var user = await _context.Users.FindAsync(1007); 
     
-    if (!hasPermission)
-    {
-        return StatusCode(403, new { message = "גישה נדחתה: חסרות הרשאות בודק ממשלתי." });
-    }
-
-    await _workflowService.ApproveAsync(id);
-    return Ok(new { message = "הטופס אושר בהצלחה", ApplicationId = id });
+    // קריאה לפונקציה המעודכנת עם שני הפרמטרים
+    await _workflowService.ApproveAsync(id, user.RoleID);
+    
+    return Ok(new { message = "הפעולה בוצעה" });
 }
 
 [HttpPost("submit")]
@@ -54,7 +47,7 @@ public async Task<IActionResult> SubmitApplication([FromBody] Application applic
 {
     if (application == null) return BadRequest("נתוני הבקשה חסרים.");
 
-    // 1. בדיקת מסמכים אוטומטית (דרישה מס' 2) [cite: 2025-12-30]
+    // 1. בדיקת מסמכים (לוגיקה ראשונית)
     if (application.AttachedDocuments == null || !application.AttachedDocuments.Any())
     {
         application.StatusID = (int)ApplicationStatus.MissingDocuments;
@@ -66,33 +59,22 @@ public async Task<IActionResult> SubmitApplication([FromBody] Application applic
 
     application.SubmissionDate = DateTime.Now;
 
-    // 2. שמירה בבסיס הנתונים (SQL בבית)
+    // 2. שמירה ראשונית בבסיס הנתונים (יצירת ה-ID לטופס)
     _context.Applications.Add(application);
     await _context.SaveChangesAsync();
 
-    // 3. הרצת ה-Workflow - כאן קורה הקסם של דרישה 6! [cite: 2026-01-13]
-    // הפונקציה הזו תבדוק חובות ואם יש חוב - תעדכן את הסטטוס ל-5 (נדחה)
+    // 3. הרצת ה-Workflow - הוא זה שיעדכן את הסטטוס הסופי וירשום להיסטוריה [cite: 2026-01-13]
     await _workflowService.ProcessApplication(application);
 
-    // 4. תיעוד היסטורי (דרישה מס' 4 - Audit System) [cite: 2025-12-30]
-    var historyEntry = new ApplicationHistory
-    {
-        ApplicationId = application.Id,
-        UserId = application.UserId,
-        Status = (ApplicationStatus)application.StatusID,
-        Action = "Submission & Validation",
-        Timestamp = DateTime.Now,
-        Remarks = application.StatusID == 5 ? "הבקשה נדחתה אוטומטית עקב חובות" : "הבקשה עברה ולידציה ראשונית"
-    };
-
-    _context.ApplicationHistory.Add(historyEntry);
-    await _context.SaveChangesAsync();
+    // *** שלב 4 נמחק! אין צורך ברישום ידני כאן כי ה-Repository כבר עשה זאת ***
 
     return Ok(new { 
         ApplicationId = application.Id, 
         FinalStatus = application.StatusID,
-        Message = "הטופס התקבל ועבר בדיקת אינטגרציה חיצונית." 
+        Message = "הטופס התקבל ועובד במערכת." 
     });
 }
+
+   
     }
 }

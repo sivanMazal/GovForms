@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GovForms.Engine.Models;
 using GovForms.Engine.Models.Enums;
-
+using GovForms.Engine.Interfaces; // <--- השורה הזו חסרה לך!
 namespace GovForms.Engine.Data
 {
     public class MockAppRepository : IAppRepository
@@ -34,12 +34,13 @@ namespace GovForms.Engine.Data
             return Task.FromResult<Application?>(app);
         }
 
-        public Task UpdateStatus(int appId, int newStatusId)
-        {
-            var app = _applications.FirstOrDefault(a => a.Id == appId);
-            if (app != null) app.StatusID = newStatusId;
-            return Task.CompletedTask; // מחזיר Task ריק שבוצע [cite: 2026-01-08]
-        }
+        // בתוך MockAppRepository.cs
+public async Task UpdateStatus(int appId, int newStatusId, string remarks = "Mock Update")
+{
+    // ב-Mock אנחנו רק מדפיסים לקונסול כדי לראות שזה עובד בלי SQL
+    Console.WriteLine($"[Mock SQL] Updating App {appId} to Status {newStatusId}. Remarks: {remarks}");
+    await Task.CompletedTask;
+}
 
         public Task LogHistory(ApplicationHistory history)
         {

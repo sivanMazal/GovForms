@@ -5,7 +5,7 @@ using GovForms.Engine.Models;
 using GovForms.Engine.Services; 
 using GovForms.Engine.Interfaces; // חובה כדי להכיר את INotificationService
 using Microsoft.EntityFrameworkCore; 
-
+using GovForms.Engine.Models.Enums; // ודאי שה-Using הזה קיים למעלה
 Console.WriteLine("===============================================");
 Console.WriteLine("National Form Processing System - v1.0");
 Console.WriteLine("===============================================");
@@ -44,8 +44,7 @@ IExternalIntegrationService externalService = new PopulationRegistrySimulator();
 var workflow = new WorkflowService(repo, notificationService, externalService);
 
 // 3. הפעלה (מכיוון שזה בבית, נבדוק טופס קיים מה-SQL)
-await workflow.ApproveAsync(11);
-// >>>>>>>>>> התיקון לשגיאה CS7036 נמצא כאן: <<<<<<<<<<
+await workflow.ApproveAsync(11, (int)UserRole.Reviewer);// >>>>>>>>>> התיקון לשגיאה CS7036 נמצא כאן: <<<<<<<<<<
 // אנחנו מעבירים גם את ה-repo וגם את ה-notificationService [cite: 2026-01-08]
 
 // הפעלה אסינכרונית (חובה להוסיף await כי הפונקציה מחזירה Task) [cite: 2026-01-11]
