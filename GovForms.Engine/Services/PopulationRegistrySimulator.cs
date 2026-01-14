@@ -7,7 +7,7 @@ namespace GovForms.Engine.Services
         public async Task<bool> HasOutstandingDebtsAsync(string Email)
         {
             await Task.Delay(500); // דימוי זמן המתנה לפנייה לשרת חיצוני [cite: 2026-01-11]
-            
+
             // סימולציה: אם המייל מכיל "debt", נחזיר שיש חוב
             return Email.Contains("debt", StringComparison.OrdinalIgnoreCase);
         }

@@ -15,19 +15,20 @@ public class NotificationService : INotificationService
         // 1. תמיד נדפיס ל-Console (יעבוד מצוין מחר במשרד) [cite: 2026-01-11]
         Console.WriteLine($"[NOTIFICATION] App: {applicationId}, User: {userId}, Msg: {message}");
 
-        try 
+        try
         {
             // 2. ניסיון שמירה ל-SQL (יעבוד בבית, ייכשל במשרד ללא שגיאה קריטית) [cite: 2026-01-11]
-            var notification = new Notification {
+            var notification = new Notification
+            {
                 ApplicationID = applicationId,
                 UserID = userId,
                 MessageContent = message
             };
-            
+
             _context.Notifications.Add(notification);
             await _context.SaveChangesAsync();
         }
-        catch (Exception )
+        catch (Exception)
         {
             // במשרד זה יגיע לכאן - אנחנו פשוט נדפיס אזהרה וזהו [cite: 2026-01-11]
             Console.WriteLine("Note: SQL Save skipped (No database connection).");

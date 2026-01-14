@@ -9,13 +9,35 @@ namespace GovForms.Engine.Data
 {
     public class MockAppRepository : IAppRepository
     {
+        private readonly List<User> _users = new List<User>(); 
+
+   public Task<UserRole?> GetUserRoleAsync(int userId)
+{
+    var user = _users.FirstOrDefault(u => u.UserID == userId);
+    // החזרה של תוצאה עטופה ב-Task בלי צורך ב-async/await
+    return Task.FromResult((UserRole?)user?.RoleID);
+}
+
+    public async Task<bool> HasPermissionAsync(int userId, string permissionName)
+    {
+        // תיקון: שימוש ב-UserID בחיפוש בתוך הרשימה
+        var user = _users.FirstOrDefault(u => u.UserID == userId);
+
+        if (user == null || user.Role == null || user.Role.Permissions == null)
+        {
+            return false;
+        }
+
+        // שימוש ב-PermissionName כפי שהגדרנו ב-SQL ובמודל
+        return user.Role.Permissions.Any(p => p.PermissionName == permissionName);
+    }
         // 1. מדמה שליפת טופס ספציפי (חשוב לבדיקת ה-Workflow)
         public Task<Application?> GetApplicationById(int id)
         {
             // אנחנו מחזירים טופס "דמה" כדי שה-ProcessApplication לא יקרוס
-            var mockApp = new Application 
-            { 
-                Id = id, 
+            var mockApp = new Application
+            {
+                Id = id,
                 Amount = 60000, // תוכלי לשנות כאן כדי לבדוק תרחישים שונים
                 UserEmail = "test@mock.com",
                 UserId = 1007

@@ -2,14 +2,16 @@ using GovForms.Engine.Data;
 using GovForms.Engine.Services;
 using GovForms.Engine.Interfaces;
 using Microsoft.EntityFrameworkCore;
-
+using FluentValidation.AspNetCore;
+using GovForms.API.Validators;
 var builder = WebApplication.CreateBuilder(args);
 
 // הגדרת SQL בבית
 builder.Services.AddDbContext<GovFormsDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<ApplicationValidator>());
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

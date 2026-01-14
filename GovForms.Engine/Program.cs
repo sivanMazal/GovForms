@@ -1,27 +1,27 @@
 ﻿using System;
 using System.Threading.Tasks;
-using GovForms.Engine.Data; 
+using GovForms.Engine.Data;
 using GovForms.Engine.Models;
-using GovForms.Engine.Services; 
+using GovForms.Engine.Services;
 using GovForms.Engine.Interfaces; // חובה כדי להכיר את INotificationService
-using Microsoft.EntityFrameworkCore; 
+using Microsoft.EntityFrameworkCore;
 using GovForms.Engine.Models.Enums; // ודאי שה-Using הזה קיים למעלה
 Console.WriteLine("===============================================");
 Console.WriteLine("National Form Processing System - v1.0");
 Console.WriteLine("===============================================");
 
 // 1. הגדרות בסיסיות
-bool useMockData = true; 
-IAppRepository repo; 
+bool useMockData = true;
+IAppRepository repo;
 INotificationService notificationService; // השירות שהיה חסר! [cite: 2025-12-30]
 
 if (useMockData)
 {
     Console.WriteLine("[System] Running in MOCK mode");
     repo = new MockAppRepository();
-    
+
     // יצירת מנוע התראות "מזויף" למשרד (את צריכה שיהיה לך קובץ כזה או פשוט להשתמש בקיים)
-    notificationService = new NotificationService(null!); 
+    notificationService = new NotificationService(null!);
 }
 else
 {
@@ -33,8 +33,8 @@ else
     var dbContext = new GovFormsDbContext(optionsBuilder.Options);
 
     // 2. יצירת השירותים האמיתיים עם ה-DbContext של הבית [cite: 2026-01-11]
-    repo = new AppRepository(dbContext); 
-    notificationService = new NotificationService(dbContext); 
+    repo = new AppRepository(dbContext);
+    notificationService = new NotificationService(dbContext);
 }
 // 1. יצירת השירות החדש (הסימולטור של משרד הפנים)
 IExternalIntegrationService externalService = new PopulationRegistrySimulator();
